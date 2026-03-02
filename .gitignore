@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Generated files
+*.pdf
+*.pptx
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# RSA Keys (security)
+rsa_key.p8
+rsa_key.pub
+*.pem
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Temp files
+tmp/
+temp/
+*.tmp
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

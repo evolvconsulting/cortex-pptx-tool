@@ -1,0 +1,1395 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>Custom Tool Architecture Guide | evolv</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+        <script type="module">
+            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'base',
+                themeVariables: {
+                    primaryColor: '#2E3952',
+                    primaryTextColor: '#FFFFFF',
+                    primaryBorderColor: '#D15635',
+                    lineColor: '#D15635',
+                    secondaryColor: '#F5F5F5',
+                    secondaryTextColor: '#343434',
+                    tertiaryColor: '#fff',
+                    fontFamily: 'Montserrat, Nunito Sans, sans-serif',
+                    fontSize: '14px',
+                    noteBkgColor: '#FFF5F0',
+                    noteBorderColor: '#D15635',
+                    noteTextColor: '#343434',
+                    actorBkg: '#2E3952',
+                    actorTextColor: '#FFFFFF',
+                    actorBorder: '#D15635',
+                    signalColor: '#343434',
+                    signalTextColor: '#343434',
+                    labelBoxBkgColor: '#F5F5F5',
+                    labelBoxBorderColor: '#D9D9D9',
+                    labelTextColor: '#343434',
+                    activationBkgColor: '#D68B60',
+                    activationBorderColor: '#D15635',
+                    sequenceNumberColor: '#FFFFFF'
+                },
+                flowchart: {
+                    useMaxWidth: true,
+                    htmlLabels: true,
+                    curve: 'basis',
+                    padding: 15
+                },
+                sequence: {
+                    useMaxWidth: true,
+                    showSequenceNumbers: true,
+                    actorMargin: 80,
+                    mirrorActors: false
+                }
+            });
+        </script>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            :root {
+                --evolv-orange: #D15635;
+                --evolv-dark: #343434;
+                --evolv-grey: #D9D9D9;
+                --evolv-blue: #2E3952;
+                --evolv-light-orange: #D68B60;
+                --sf-blue: #29B5E8;
+                --sf-dark-blue: #11567F;
+                --spcs-green: #2EB67D;
+                --code-bg: #1e293b;
+            }
+
+            body {
+                font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+                background: #fafbfc;
+                color: var(--evolv-dark);
+                line-height: 1.8;
+                font-size: 16px;
+            }
+
+            #wrapper {
+                display: flex;
+                max-width: 1800px;
+                margin: 0 auto;
+            }
+
+            /* Header */
+            #header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3.5rem;
+                background: white;
+                border-bottom: 2px solid var(--evolv-orange);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                padding: 0 2rem;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+
+            #header h1 {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 1.8rem;
+                font-weight: 300;
+                color: var(--evolv-orange);
+                margin: 0;
+            }
+
+            #header h1 a {
+                color: var(--evolv-orange);
+                text-decoration: none;
+                background: linear-gradient(135deg, var(--evolv-orange) 0%, var(--evolv-light-orange) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            /* Sidebar */
+            #sidebar {
+                position: fixed;
+                top: 3.5rem;
+                left: 0;
+                width: 22rem;
+                height: calc(100vh - 3.5rem);
+                background: white;
+                border-right: 1px solid var(--evolv-grey);
+                overflow-y: auto;
+                padding: 2rem;
+            }
+
+            #intro {
+                margin-bottom: 3rem;
+                text-align: center;
+            }
+
+            #intro .logo {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 3rem;
+                font-weight: 300;
+                color: var(--evolv-orange);
+                background: linear-gradient(135deg, var(--evolv-orange) 0%, var(--evolv-light-orange) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+
+            #intro header h2 {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: var(--evolv-blue);
+                margin-bottom: 0.5rem;
+            }
+
+            #intro header p {
+                font-size: 0.9rem;
+                color: var(--evolv-blue);
+                opacity: 0.8;
+            }
+
+            .nav-section {
+                margin-bottom: 2rem;
+            }
+
+            .nav-section h3 {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                color: var(--evolv-orange);
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid var(--evolv-grey);
+            }
+
+            .nav-section ul {
+                list-style: none;
+            }
+
+            .nav-section ul li {
+                margin-bottom: 0.8rem;
+            }
+
+            .nav-section ul li a {
+                color: var(--evolv-blue);
+                text-decoration: none;
+                font-size: 0.95rem;
+                transition: color 0.3s ease;
+                display: block;
+                padding: 0.3rem 0;
+            }
+
+            .nav-section ul li a:hover {
+                color: var(--evolv-orange);
+            }
+
+            /* Main Content */
+            #main {
+                margin-left: 22rem;
+                margin-top: 3.5rem;
+                padding: 3rem;
+                flex: 1;
+                max-width: 1200px;
+            }
+
+            article.post {
+                background: white;
+                padding: 3rem;
+                margin-bottom: 2rem;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+                border-left: 4px solid var(--evolv-orange);
+            }
+
+            article.post header .title h2 {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 2rem;
+                font-weight: 600;
+                color: var(--evolv-dark);
+                margin-bottom: 0.5rem;
+            }
+
+            article.post header .title p {
+                font-size: 1.1rem;
+                color: var(--evolv-blue);
+                opacity: 0.8;
+            }
+
+            article.post h3 {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: var(--evolv-dark);
+                margin: 2rem 0 1rem 0;
+            }
+
+            article.post h4 {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: var(--evolv-orange);
+                margin: 1.5rem 0 1rem 0;
+            }
+
+            article.post p {
+                margin-bottom: 1.5rem;
+                line-height: 1.8;
+            }
+
+            article.post ul, article.post ol {
+                margin: 1.5rem 0 1.5rem 2rem;
+                line-height: 1.8;
+            }
+
+            article.post ul li, article.post ol li {
+                margin-bottom: 0.5rem;
+            }
+
+            article.post code,
+            article.post pre:not(.mermaid) {
+                background: #1e293b;
+                color: #e2e8f0;
+                padding: 0.2rem 0.5rem;
+                border-radius: 4px;
+                font-family: 'Courier New', monospace;
+                font-size: 0.9rem;
+            }
+
+            article.post pre:not(.mermaid) {
+                padding: 1.5rem;
+                margin: 1.5rem 0;
+                overflow-x: auto;
+                line-height: 1.6;
+            }
+
+            article.post pre:not(.mermaid) code {
+                padding: 0;
+                background: transparent;
+            }
+
+            /* Mermaid diagram containers */
+            .mermaid-container {
+                background: #FAFBFC;
+                border: 1px solid var(--evolv-grey);
+                border-radius: 12px;
+                padding: 1.5rem;
+                margin: 1.5rem 0;
+                overflow-x: auto;
+            }
+
+            .mermaid-container .mermaid {
+                display: flex;
+                justify-content: center;
+            }
+
+            .mermaid-caption {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                color: var(--evolv-blue);
+                text-align: center;
+                margin-top: 0.8rem;
+                opacity: 0.7;
+            }
+
+            .layer-label {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 0.75rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 3px;
+                margin-bottom: 1rem;
+                display: inline-block;
+                padding: 0.5rem 1.5rem;
+                border-left: 3px solid var(--evolv-orange);
+            }
+
+            .layer-label.foundation {
+                color: var(--sf-dark-blue);
+                background: rgba(17, 86, 127, 0.1);
+                border-left-color: var(--sf-dark-blue);
+            }
+
+            .layer-label.service {
+                color: var(--spcs-green);
+                background: rgba(46, 182, 125, 0.1);
+                border-left-color: var(--spcs-green);
+            }
+
+            .layer-label.snowflake {
+                color: var(--sf-blue);
+                background: rgba(41, 181, 232, 0.1);
+                border-left-color: var(--sf-blue);
+            }
+
+            .layer-label.agent {
+                color: var(--evolv-orange);
+                background: rgba(209, 86, 53, 0.1);
+                border-left-color: var(--evolv-orange);
+            }
+
+            .layer-label.bridge {
+                color: #8B5CF6;
+                background: rgba(139, 92, 246, 0.1);
+                border-left-color: #8B5CF6;
+            }
+
+            .step-number {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2.5rem;
+                height: 2.5rem;
+                background: linear-gradient(135deg, var(--evolv-orange) 0%, var(--evolv-light-orange) 100%);
+                color: white;
+                border-radius: 50%;
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 700;
+                font-size: 1.2rem;
+                margin-right: 1rem;
+            }
+
+            .note-block {
+                background: rgba(209, 86, 53, 0.1);
+                padding: 1.5rem;
+                border-radius: 8px;
+                margin: 1.5rem 0;
+                border-left: 4px solid var(--evolv-orange);
+            }
+
+            .note-block strong {
+                color: var(--evolv-orange);
+                font-weight: 700;
+            }
+
+            .warning-block {
+                background: rgba(46, 57, 82, 0.08);
+                padding: 2rem;
+                border-radius: 12px;
+                margin: 1.5rem 0;
+                border-left: 6px solid var(--evolv-blue);
+                box-shadow: 0 2px 12px rgba(46, 57, 82, 0.1);
+            }
+
+            .warning-block h4 {
+                color: var(--evolv-blue);
+                margin-top: 1.5rem;
+                margin-bottom: 0.8rem;
+                font-size: 1.1rem;
+            }
+
+            .warning-block h4:first-of-type {
+                margin-top: 0;
+            }
+
+            .warning-block p {
+                margin-bottom: 1rem;
+            }
+
+            .warning-block strong {
+                color: var(--evolv-blue);
+                font-weight: 700;
+            }
+
+            .success-block {
+                background: rgba(46, 182, 125, 0.1);
+                padding: 1.5rem;
+                border-radius: 8px;
+                margin: 1.5rem 0;
+                border-left: 4px solid var(--spcs-green);
+            }
+
+            .success-block strong {
+                color: var(--spcs-green);
+                font-weight: 700;
+            }
+
+            .info-block {
+                background: rgba(41, 181, 232, 0.1);
+                padding: 1.5rem;
+                border-radius: 8px;
+                margin: 1.5rem 0;
+                border-left: 4px solid var(--sf-blue);
+            }
+
+            .info-block strong {
+                color: var(--sf-dark-blue);
+                font-weight: 700;
+            }
+
+            .info-block h4 {
+                color: var(--sf-dark-blue);
+                margin-top: 0;
+                margin-bottom: 0.8rem;
+            }
+
+            .file-tree {
+                background: var(--code-bg);
+                color: #94a3b8;
+                padding: 1.5rem;
+                border-radius: 8px;
+                margin: 1.5rem 0;
+                font-family: 'Courier New', monospace;
+                font-size: 0.85rem;
+                line-height: 1.8;
+                overflow-x: auto;
+                white-space: pre;
+            }
+
+            .file-tree .folder {
+                color: #60a5fa;
+            }
+
+            .file-tree .file-sql {
+                color: #34d399;
+            }
+
+            .file-tree .file-js {
+                color: #fbbf24;
+            }
+
+            .file-tree .file-docker {
+                color: #38bdf8;
+            }
+
+            .flow-step {
+                display: flex;
+                align-items: flex-start;
+                margin: 1rem 0;
+                padding: 1rem 1.5rem;
+                background: rgba(46, 57, 82, 0.04);
+                border-radius: 8px;
+                border-left: 3px solid var(--evolv-grey);
+                transition: border-color 0.3s ease;
+            }
+
+            .flow-step:hover {
+                border-left-color: var(--evolv-orange);
+            }
+
+            .flow-step .flow-num {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 2rem;
+                height: 2rem;
+                background: var(--evolv-blue);
+                color: white;
+                border-radius: 50%;
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 700;
+                font-size: 0.85rem;
+                margin-right: 1rem;
+                margin-top: 0.2rem;
+            }
+
+            .flow-step .flow-content {
+                flex: 1;
+            }
+
+            .flow-step .flow-content strong {
+                color: var(--evolv-blue);
+            }
+
+            .flow-step .flow-content code {
+                font-size: 0.85rem;
+            }
+
+            .component-card {
+                background: white;
+                border: 1px solid var(--evolv-grey);
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin: 1rem 0;
+                transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            }
+
+            .component-card:hover {
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                border-color: var(--evolv-orange);
+            }
+
+            .component-card h5 {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--evolv-blue);
+                margin-bottom: 0.5rem;
+            }
+
+            .component-card p {
+                font-size: 0.95rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .component-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin: 1.5rem 0;
+            }
+
+            table.spec-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 1.5rem 0;
+                font-size: 0.95rem;
+            }
+
+            table.spec-table th {
+                background: var(--evolv-blue);
+                color: white;
+                padding: 0.8rem 1rem;
+                text-align: left;
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
+            table.spec-table td {
+                padding: 0.8rem 1rem;
+                border-bottom: 1px solid #eee;
+            }
+
+            table.spec-table tr:hover {
+                background: rgba(209, 86, 53, 0.04);
+            }
+
+            table.spec-table td code {
+                font-size: 0.85rem;
+                background: #f1f5f9;
+                color: var(--evolv-blue);
+                padding: 0.15rem 0.4rem;
+            }
+
+            #footer {
+                text-align: center;
+                padding: 3rem 2rem;
+                background: var(--evolv-blue);
+                color: white;
+                margin-top: 3rem;
+            }
+
+            #footer .logo {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 2rem;
+                font-weight: 300;
+                margin-bottom: 1rem;
+            }
+
+            #footer p {
+                font-size: 0.9rem;
+                opacity: 0.9;
+            }
+
+            @media screen and (max-width: 1280px) {
+                #sidebar { width: 18rem; }
+                #main { margin-left: 18rem; }
+            }
+
+            @media screen and (max-width: 980px) {
+                #wrapper { flex-direction: column; }
+                #sidebar {
+                    position: relative;
+                    width: 100%;
+                    height: auto;
+                    border-right: none;
+                    border-bottom: 1px solid var(--evolv-grey);
+                }
+                #main { margin-left: 0; padding: 2rem; }
+                .component-grid { grid-template-columns: 1fr; }
+            }
+
+            @media screen and (max-width: 736px) {
+                #header { padding: 0 1rem; }
+                #header h1 { font-size: 1.4rem; }
+                article.post { padding: 2rem; }
+                article.post header .title h2 { font-size: 1.5rem; }
+            }
+        </style>
+    </head>
+    <body>
+
+        <!-- Header -->
+        <header id="header">
+            <h1><a href="#">Custom Tool Architecture Guide</a></h1>
+        </header>
+
+        <!-- Wrapper -->
+        <div id="wrapper">
+
+            <!-- Sidebar -->
+            <section id="sidebar">
+
+                <!-- Intro -->
+                <section id="intro">
+                    <span class="logo">evolv</span>
+                    <header>
+                        <h2>PPTX Custom Tool</h2>
+                        <p>Architecture &amp; Build Process</p>
+                    </header>
+                </section>
+
+                <!-- Navigation -->
+                <div class="nav-section">
+                    <h3>Overview</h3>
+                    <ul>
+                        <li><a href="#overview">What is a Custom Tool?</a></li>
+                        <li><a href="#big-picture">Big Picture Architecture</a></li>
+                        <li><a href="#project-structure">Project Structure</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Layer 1: The Service</h3>
+                    <ul>
+                        <li><a href="#layer1-utils">The SPCS Service</a></li>
+                        <li><a href="#layer1-api">Express API Endpoints</a></li>
+                        <li><a href="#layer1-docker">Dockerfile &amp; SPCS</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Layer 2: SQL Scripts</h3>
+                    <ul>
+                        <li><a href="#layer2-infra">Infrastructure</a></li>
+                        <li><a href="#layer2-procedure">Procedure</a></li>
+                        
+                        <li><a href="#layer2-procedure">02: Stored Procedure</a></li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Layer 3: Agent</h3>
+                    <ul>
+                        <li><a href="#layer3-specialist">PPTX Agent</a></li>
+                        
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Layer 4: Multi-Agent</h3>
+                    <ul>
+                        <li><a href="#layer4-jwt">JWT Auth</a></li>
+                        
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Layer 5: Integration</h3>
+                    <ul>
+                        <li><a href="#layer5-integration">Your Agent</a></li>
+                        <li><a href="#layer5-endtoend">Request Flow</a></li>
+                    </ul>
+                </div>
+
+            </section>
+
+            <!-- Main -->
+            <div id="main">
+
+                <!-- ============================================================ -->
+                <!-- OVERVIEW -->
+                <!-- ============================================================ -->
+                <article class="post" id="overview">
+                    <header>
+                        <div class="title">
+                            <h2>What is a Custom Tool?</h2>
+                            <p>Understanding how Cortex Agents extend their capabilities</p>
+                        </div>
+                    </header>
+
+                    <p>A <strong>Cortex Agent</strong> is an AI orchestrator that can use <strong>tools</strong> to take actions. 
+                    Snowflake provides built-in tool types like <code>cortex_analyst_text_to_sql</code>, <code>cortex_search</code>, 
+                    and <code>web_search</code>. But when you need the agent to do something entirely custom &mdash; like generating 
+                    PowerPoint presentations &mdash; you build a <strong>Custom Tool</strong>.</p>
+
+                    <p>A custom tool is a <strong>stored procedure</strong> that the agent can call. But behind that procedure can live 
+                    an entire ecosystem: containerized services, external APIs, Python logic, and more.</p>
+
+                    <div class="warning-block">
+                        <h4><strong>The Core Concept</strong></h4>
+                        <p>From the agent's perspective, a custom tool is simple: it calls a procedure with parameters and gets a result back. 
+                        But the <strong>depth of what happens inside</strong> that procedure is where the real architecture lives.</p>
+                        <p>This guide walks through every layer &mdash; from the smallest utility function inside a Docker container, 
+                        all the way up to the main orchestrating agent that invokes the tool.</p>
+                    </div>
+
+                    <h3>The Five Layers</h3>
+                    <p>Building a custom tool involves five distinct architectural layers, each building on the previous:</p>
+
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+flowchart TB
+    subgraph L5["<b>Layer 5: YOUR MAIN AGENT</b>"]
+        SA["Main Orchestrating Agent<br/>Exposes tool to users"]
+    end
+    subgraph L4["<b>Layer 4: Multi-Agent Bridge</b>"]
+        BR["JWT Auth + HTTPS API<br/>Python UDF, RSA key-pair"]
+    end
+    subgraph L3["<b>Layer 3: PPTX_GENERATOR_AGENT</b>"]
+        SP["Specialist Agent<br/>Domain knowledge + tool binding"]
+    end
+    subgraph L2["<b>Layer 2: Snowflake Objects</b>"]
+        SF["Stage, Service Functions, Procedure<br/>SQL + Python Snowpark"]
+    end
+    subgraph L1["<b>Layer 1: SPCS Service</b>"]
+        SV["Node.js Application<br/>Playwright, PptxGenJS, Express"]
+    end
+
+    SA --> BR
+    BR --> SP
+    SP --> SF
+    SF --> SV
+
+    style L5 fill:#D15635,color:#fff,stroke:#D15635
+    style L4 fill:#8B5CF6,color:#fff,stroke:#8B5CF6
+    style L3 fill:#D68B60,color:#fff,stroke:#D68B60
+    style L2 fill:#29B5E8,color:#fff,stroke:#29B5E8
+    style L1 fill:#11567F,color:#fff,stroke:#11567F
+                        </pre>
+                        <div class="mermaid-caption">Five-Layer Architecture Stack</div>
+                    </div>
+
+                    <table class="spec-table">
+                        <tr>
+                            <th>Layer</th>
+                            <th>What Lives Here</th>
+                            <th>Technology</th>
+                        </tr>
+                        <tr>
+                            <td><strong>1. The Service</strong></td>
+                            <td>Application logic: converters, parsers, renderers</td>
+                            <td>Node.js, Playwright, PptxGenJS</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2. Snowflake Objects</strong></td>
+                            <td>Infrastructure: stages, service functions, procedures</td>
+                            <td>SQL, Python (Snowpark)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>3. Specialist Agent</strong></td>
+                            <td>AI agent with domain knowledge + tool binding</td>
+                            <td>Cortex Agent YAML</td>
+                        </tr>
+                        <tr>
+                            <td><strong>4. Multi-Agent Bridge</strong></td>
+                            <td>JWT auth, HTTPS API calls between agents</td>
+                            <td>Python UDF, RSA key-pair</td>
+                        </tr>
+                        <tr>
+                            <td><strong>5. Main Agent</strong></td>
+                            <td>Orchestrating agent that exposes the tool to users</td>
+                            <td>Cortex Agent YAML</td>
+                        </tr>
+                    </table>
+                </article>
+
+                <!-- ============================================================ -->
+                <!-- BIG PICTURE -->
+                <!-- ============================================================ -->
+                <article class="post" id="big-picture">
+                    <header>
+                        <div class="title">
+                            <h2>Big Picture Architecture</h2>
+                            <p>How all the pieces connect from user request to generated file</p>
+                        </div>
+                    </header>
+
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+flowchart TD
+    USER["&nbsp;User Request&nbsp;<br/><i>'Create a pitch deck for the ABC Corp deal'</i>"]
+    
+    subgraph MAIN["YOUR_MAIN_AGENT"]
+        direction LR
+        T1["Your Data Tools<br/><small>Semantic Models, Search</small>"]
+        T3["web_search<br/><small>External Info</small>"]
+        T4["CALL_PPTX_AGENT_EXTERNAL<br/><small>Presentation Generation</small>"]
+    end
+
+    subgraph BRIDGE["Multi-Agent Bridge"]
+        JWT["ASK_PPTX_AGENT UDF<br/><small>JWT Key-Pair Auth via HTTPS</small>"]
+    end
+
+    subgraph PPTX["PPTX_GENERATOR_AGENT"]
+        direction LR
+        WS["web_search"]
+        CR["CREATE_PPTX_FROM_JSON<br/><small>Stored Procedure</small>"]
+    end
+
+    subgraph SPCS["PPTX_GENERATOR_SERVICE &lpar;SPCS&rpar;"]
+        direction LR
+        HC["htmlConverter"]
+        FC["flexibleConverter<br/><small>Playwright + DOM</small>"]
+        SB["slideBuilder<br/><small>PptxGenJS</small>"]
+        CB["chartBuilder +<br/>tableBuilder"]
+    end
+
+    STAGE[("@PPTX_OUTPUT_STAGE<br/><small>presentation.pptx</small>")]
+
+    USER --> MAIN
+    T4 --> BRIDGE
+    BRIDGE --> PPTX
+    CR --> SPCS
+    HC --> FC --> SB --> CB
+    SPCS -->|"base64 PPTX"| CR
+    CR -->|"session.file.put&lpar;&rpar;"| STAGE
+
+    style USER fill:#2E3952,color:#fff,stroke:#D15635,stroke-width:2px
+    style MAIN fill:#FFF5F0,color:#343434,stroke:#D15635,stroke-width:2px
+    style BRIDGE fill:#F3EEFF,color:#343434,stroke:#8B5CF6,stroke-width:2px
+    style PPTX fill:#FFF5F0,color:#343434,stroke:#D68B60,stroke-width:2px
+    style SPCS fill:#E8F8F0,color:#343434,stroke:#2EB67D,stroke-width:2px
+    style STAGE fill:#E0F4FD,color:#11567F,stroke:#29B5E8,stroke-width:2px
+                        </pre>
+                        <div class="mermaid-caption">Complete Request Flow &mdash; User to File</div>
+                    </div>
+                </article>
+
+                <!-- ============================================================ -->
+                <!-- PROJECT STRUCTURE -->
+                <!-- ============================================================ -->
+                <article class="post" id="project-structure">
+                    <header>
+                        <div class="title">
+                            <h2>Project Structure</h2>
+                            <p>File organization and deployment scripts</p>
+                        </div>
+                    </header>
+
+                    <p>The project is organized into three directories, each serving a distinct purpose:</p>
+
+                    <div class="file-tree">
+<span class="folder">cortex-pptx-tool/</span>
+<span class="file-docker">  Dockerfile</span>                            <span style="color:#64748b;">-- Multi-stage build with Playwright + LibreOffice</span>
+  package.json
+<span class="file-js">  src/index.js</span>                          <span style="color:#64748b;">-- Express server entry point</span>
+<span class="file-js">  src/routes/index.js</span>                   <span style="color:#64748b;">-- /health, /convert</span>
+<span class="file-js">  src/controllers/</span>                      <span style="color:#64748b;">-- Request handlers</span>
+<span class="file-js">  src/services/</span>                         <span style="color:#64748b;">-- Business logic (htmlConverter, pptxExecutor)</span>
+<span class="file-js">  src/converters/</span>                       <span style="color:#64748b;">-- HTML-to-PPTX conversion strategies</span>
+<span class="file-js">  src/utils/</span>                            <span style="color:#64748b;">-- Unit conversion, browser, icons</span>
+
+<span class="folder">  sql/</span>                                   <span style="color:#64748b;">-- SQL deployment scripts (Layers 2-4)</span>
+<span class="file-sql">    01_pptx_infrastructure.sql</span>           <span style="color:#64748b;">-- Image repo, stage, SPCS service, functions</span>
+<span class="file-sql">    02_pptx_procedure.sql</span>                <span style="color:#64748b;">-- CREATE_PPTX_FROM_JSON stored procedure</span>
+<span class="file-sql">    03_pptx_generator_agent.sql</span>          <span style="color:#64748b;">-- PPTX_GENERATOR_AGENT definition</span>
+<span class="file-sql">    04_multi_agent_bridge.sql</span>            <span style="color:#64748b;">-- JWT auth + multi-agent bridge</span>
+                    </div>
+
+                    <div class="note-block">
+                        <strong>Deployment Order Matters:</strong> Scripts are numbered <code>01</code> through <code>04</code> and must 
+                        be executed sequentially. Each script depends on objects created by previous scripts. All objects live in 
+                        <code>{{DATABASE}}.{{SCHEMA}}</code>.
+                    </div>
+                </article>
+
+                <!-- ============================================================ -->
+                <!-- LAYER 1: THE SERVICE -->
+                <!-- ============================================================ -->
+                <article class="post" id="layer1-utils">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">1</span>The Service: Utilities &amp; Converters</h2>
+                            <p>The smallest building blocks inside the SPCS container</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label foundation">Layer 1 &middot; Foundation</span>
+
+                    <p>At the very bottom of the architecture are <strong>pure utility functions</strong> that handle unit conversion between 
+                    web standards (pixels, RGB) and PowerPoint's internal units (inches, points, hex colors).</p>
+
+                    <h3>Unit Conversions (The Atomic Level)</h3>
+
+                    <pre><code>// src/config/constants.js
+const CONSTANTS = {
+  PT_PER_PX: 0.75,         // 1px = 0.75 points
+  PX_PER_IN: 96,           // 96px = 1 inch
+  EMU_PER_IN: 914400,      // EMU = PowerPoint's internal unit
+
+  DEFAULT_WIDTH: 960,      // 10" x 96dpi
+  DEFAULT_HEIGHT: 540,     // 5.625" x 96dpi (16:9)
+  SLIDE_WIDTH_IN: 10,
+  SLIDE_HEIGHT_IN: 5.625,
+};
+
+// src/utils/units.js
+pxToInch(px)       // px / 96 &rarr; inches for PptxGenJS positioning
+pxToPoints(pxStr)  // parseFloat(px) * 0.75 &rarr; font sizes
+rgbToHex(rgbStr)   // "rgb(209,86,53)" &rarr; "D15635" (no # prefix!)</code></pre>
+
+                    <h3>DOM Extraction (Playwright)</h3>
+                    <p>The <strong>domExtractor</strong> (~970 lines) is the core engine. It uses <strong>Playwright</strong> to render HTML 
+                    in a headless Chromium browser, then walks the DOM tree extracting every visible element with its 
+                    computed CSS properties:</p>
+
+                    <pre><code>// src/converters/domExtractor.js  extractSlideData(page)
+// Returns structured data for each element:
+{
+  type: 'text',     // or 'shape', 'list', 'line', 'image'
+  text: 'Revenue Growth',
+  position: { x: 0.31, y: 0.31, w: 6.88, h: 0.52 },  // inches
+  style: {
+    fontSize: 28,      // points (converted from CSS px)
+    fontFace: 'Arial',
+    color: '2E3952',   // hex without #
+    bold: true,
+    italic: false,
+    align: 'left'
+  }
+}</code></pre>
+
+                    <h3>The Conversion Pipeline</h3>
+
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+flowchart LR
+    HTML["HTML String<br/><small>with inline CSS</small>"]
+    TMP["Temp File<br/><small>file:// URL</small>"]
+    PW["Playwright<br/><small>Chromium render</small>"]
+    DOM["DOM Extractor<br/><small>~970 lines</small>"]
+    DATA["Structured Data<br/><small>positions + styles</small>"]
+    SB["Slide Builder<br/><small>addText, addShape</small>"]
+    PPTX["PptxGenJS Slide<br/><small>native elements</small>"]
+    
+    HTML --> TMP --> PW --> DOM --> DATA --> SB --> PPTX
+
+    style HTML fill:#2E3952,color:#fff,stroke:#2E3952
+    style PW fill:#D15635,color:#fff,stroke:#D15635
+    style DOM fill:#D68B60,color:#fff,stroke:#D68B60
+    style DATA fill:#F5F5F5,color:#343434,stroke:#D9D9D9
+    style SB fill:#29B5E8,color:#fff,stroke:#29B5E8
+    style PPTX fill:#2EB67D,color:#fff,stroke:#2EB67D
+    style TMP fill:#F5F5F5,color:#343434,stroke:#D9D9D9
+                        </pre>
+                        <div class="mermaid-caption">HTML-to-PPTX Conversion Pipeline</div>
+                    </div>
+
+                    <div class="info-block">
+                        <h4>What Gets Extracted from the DOM?</h4>
+                        <ul style="margin: 0.5rem 0 0 1.5rem;">
+                            <li><strong>Text elements</strong> (<code>&lt;p&gt;</code>, <code>&lt;h1&gt;</code>-<code>&lt;h6&gt;</code>) &rarr; font, size, color, bold, italic, alignment</li>
+                            <li><strong>Lists</strong> (<code>&lt;ul&gt;</code>, <code>&lt;ol&gt;</code>) &rarr; PptxGenJS bullet format with indentation</li>
+                            <li><strong>Shapes</strong> (<code>&lt;div&gt;</code> with background/border) &rarr; rounded rectangles with fill, shadow</li>
+                            <li><strong>Placeholders</strong> (<code>class="placeholder"</code>) &rarr; reserved positions for charts/tables</li>
+                            <li><strong>Inline formatting</strong> (<code>&lt;b&gt;</code>, <code>&lt;i&gt;</code>, <code>&lt;span&gt;</code>) &rarr; text runs with mixed styles</li>
+                            <li><strong>Rotation</strong> (CSS <code>transform: rotate()</code>) &rarr; PptxGenJS rotation property</li>
+                        </ul>
+                    </div>
+
+                    <h3>Three Conversion Strategies</h3>
+
+                    <div class="component-grid">
+                        <div class="component-card">
+                            <h5>Strict Converter</h5>
+                            <p><code>domParserConverter.js</code></p>
+                            <p>Validates HTML strictly. Used when exactness matters. Rejects invalid structures.</p>
+                        </div>
+                        <div class="component-card">
+                            <h5>Flexible Converter (Primary)</h5>
+                            <p><code>flexibleConverter.js</code></p>
+                            <p>Tolerant, auto-scales overflowing content. This is the main conversion path used by the agent.</p>
+                        </div>
+                        <div class="component-card">
+                            <h5>Screenshot Converter</h5>
+                            <p><code>screenshotConverter.js</code></p>
+                            <p>Captures HTML as PNG image and embeds it. Fast but not editable.</p>
+                        </div>
+                        <div class="component-card">
+                            <h5>Slide Builder</h5>
+                            <p><code>slideBuilder.js</code></p>
+                            <p>Takes extracted DOM data and creates native PptxGenJS elements: <code>addText()</code>, <code>addShape()</code>, <code>addImage()</code>.</p>
+                        </div>
+                    </div>
+
+                    <h3>Chart &amp; Table Builders</h3>
+                    <p>Charts and tables are <strong>not</strong> rendered from HTML. Instead, the agent provides structured JSON data, 
+                    and these builders create <strong>native</strong> PptxGenJS chart/table objects at placeholder positions:</p>
+
+                    <pre><code>// src/converters/chartBuilder.js
+function addChartToSlide(slide, pres, chartConfig, placeholder) {
+  slide.addChart(pres.charts[chartConfig.type], chartConfig.data, {
+    x: placeholder.x,   // Position from HTML placeholder
+    y: placeholder.y,
+    w: placeholder.w,
+    h: placeholder.h,
+    ...chartConfig.options   // Colors, legends, axis titles
+  });
+}
+// Supported: BAR, LINE, PIE, DOUGHNUT, SCATTER, AREA</code></pre>
+                </article>
+
+                <!-- LAYER 1: API -->
+                <article class="post" id="layer1-api">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">1</span>The Service: Express API</h2>
+                            <p>The HTTP interface that Snowflake calls</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label foundation">Layer 1 &middot; Service API</span>
+
+                    <p>All the utilities and converters are exposed through a simple Express.js HTTP server with three endpoints:</p>
+
+                    <table class="spec-table">
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Purpose</th>
+                        </tr>
+                        <tr>
+                            <td><code>GET /health</code></td>
+                            <td>GET</td>
+                            <td>Health check with dependency status (Playwright, LibreOffice)</td>
+                        </tr>
+                        <tr>
+                            <td><code>POST /convert</code></td>
+                            <td>POST</td>
+                            <td>Convert HTML slides to PPTX (the main path)</td>
+                        </tr>
+                    </table>
+
+                    <h3>The /convert Pipeline</h3>
+                    <p>This is the endpoint that the Snowflake service function calls. Here's the full pipeline:</p>
+
+                    <div class="flow-step">
+                        <span class="flow-num">1</span>
+                        <div class="flow-content">
+                            <strong>Receive Snowflake Service Function call</strong><br>
+                            Input format: <code>{"data": [[0, {"slides": [...], "options": {...}}]]}</code>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <span class="flow-num">2</span>
+                        <div class="flow-content">
+                            <strong>For each slide:</strong> Write HTML to temp file, launch Playwright browser
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <span class="flow-num">3</span>
+                        <div class="flow-content">
+                            <strong>DOM Extraction:</strong> Navigate Chromium to the HTML file, extract all elements with computed styles
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <span class="flow-num">4</span>
+                        <div class="flow-content">
+                            <strong>Build Slide:</strong> Create PptxGenJS slide, add backgrounds, text, shapes, lists, images as <em>native editable elements</em>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <span class="flow-num">5</span>
+                        <div class="flow-content">
+                            <strong>Process Charts/Tables:</strong> Find placeholders by ID, inject native charts/tables at those positions
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <span class="flow-num">6</span>
+                        <div class="flow-content">
+                            <strong>Return:</strong> <code>{"output": {"base64": "UEsDBBQA...", "slideCount": 8}}</code>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- LAYER 1: DOCKER -->
+                <article class="post" id="layer1-docker">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">1</span>The Service: Docker &amp; SPCS</h2>
+                            <p>Containerizing the service for Snowpark Container Services</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label foundation">Layer 1 &middot; Container</span>
+
+                    <p>The Node.js service runs inside a Docker container deployed to <strong>Snowpark Container Services (SPCS)</strong>. 
+                    The Dockerfile uses a multi-stage build to minimize the final image size:</p>
+
+                    <pre><code># Stage 1: Builder - compile native dependencies (sharp, etc.)
+FROM node:18-slim AS builder
+RUN apt-get install -y build-essential python3 libvips-dev
+COPY package.json .
+RUN npm ci --omit=dev
+
+# Stage 2: Runtime - minimal production image
+FROM node:18-slim
+# Runtime dependencies only (no build tools):
+#   libvips42        - image processing (sharp)
+#   libreoffice      - PPTX-to-PDF preview
+#   poppler-utils    - PDF-to-image (pdftoppm)
+#   Chromium deps    - Playwright headless browser
+
+COPY --from=builder /app/node_modules ./node_modules
+RUN npx playwright install chromium
+COPY src/ ./src/
+
+EXPOSE 8080
+CMD ["node", "src/index.js"]</code></pre>
+
+                    <h3>Key Dependencies in the Container</h3>
+                    <table class="spec-table">
+                        <tr>
+                            <th>Dependency</th>
+                            <th>Purpose</th>
+                        </tr>
+                        <tr>
+                            <td><code>PptxGenJS</code></td>
+                            <td>Creates native .pptx files programmatically</td>
+                        </tr>
+                        <tr>
+                            <td><code>Playwright + Chromium</code></td>
+                            <td>Renders HTML and extracts DOM with computed CSS</td>
+                        </tr>
+                        <tr>
+                            <td><code>Sharp (libvips)</code></td>
+                            <td>Image processing (resize, format conversion)</td>
+                        </tr>
+                        <tr>
+                            <td><code>LibreOffice Impress</code></td>
+                            <td>PPTX &rarr; PDF conversion for preview generation</td>
+                        </tr>
+                        <tr>
+                            <td><code>poppler-utils</code></td>
+                            <td>PDF &rarr; PNG images (slide previews)</td>
+                        </tr>
+                    </table>
+
+                    <div class="note-block">
+                        <strong>Resource Allocation:</strong> The SPCS service runs with <code>2G&ndash;4G RAM</code> and <code>1 CPU</code>. 
+                        Chromium headless rendering is the most resource-intensive operation.
+                    </div>
+                </article>
+
+                <!-- ============================================================ -->
+                <!-- LAYER 2: SQL SCRIPTS -->
+                <!-- ============================================================ -->
+                <article class="post" id="layer2-infra">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">2</span>Infrastructure</h2>
+                            <p>Image repo, stage, compute pool, SPCS service</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label snowflake">Layer 2</span>
+
+                    <p>Creates the foundational Snowflake objects:</p>
+                    <ul>
+                        <li><strong>Image Repository</strong> — Where you push the Docker image</li>
+                        <li><strong>Output Stage</strong> — Where generated PPTX files are stored</li>
+                        <li><strong>Compute Pool</strong> — Resources for the container</li>
+                        <li><strong>SPCS Service</strong> — The running container</li>
+                        <li><strong>Service Function</strong> — SQL interface to call the container</li>
+                    </ul>
+                </article>
+
+                <article class="post" id="layer2-procedure">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">2</span>Stored Procedure</h2>
+                            <p>Orchestrates service call and file output</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label snowflake">Layer 2</span>
+
+                    <p>Creates <code>CREATE_PPTX_FROM_JSON</code> — the procedure that:</p>
+                    <ul>
+                        <li>Calls the SPCS service</li>
+                        <li>Decodes the base64 response</li>
+                        <li>Writes the PPTX file to the output stage</li>
+                    </ul>
+                </article>
+
+                <!-- ============================================================ -->
+                <!-- LAYER 3: THE AGENT -->
+                <!-- ============================================================ -->
+                <article class="post" id="layer3-specialist">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">3</span>PPTX Agent</h2>
+                            <p>Specialist Cortex Agent for presentations</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label agent">Layer 3</span>
+
+                    <p>Creates <code>PPTX_GENERATOR_AGENT</code> — a specialist Cortex Agent with:</p>
+                    <ul>
+                        <li>Detailed system instructions for HTML slide design</li>
+                        <li>18 color palettes and 7 slide templates</li>
+                        <li>The <code>CREATE_PPTX_FROM_JSON</code> tool bound</li>
+                    </ul>
+
+                    <div class="note-block">
+                        <strong>Standalone Usage:</strong> At this point you can use PPTX_GENERATOR_AGENT directly 
+                        from Snowsight. Layer 4 is only needed for multi-agent orchestration.
+                    </div>
+                </article>
+
+                <!-- ============================================================ -->
+                <!-- LAYER 4: MULTI-AGENT BRIDGE -->
+                <!-- ============================================================ -->
+                <article class="post" id="layer4-jwt">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">4</span>Multi-Agent Bridge</h2>
+                            <p>JWT authentication for agent-to-agent calls</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label bridge">Layer 4</span>
+
+                    <p>Enables your main agent to call PPTX_GENERATOR_AGENT via JWT authentication. Creates:</p>
+                    <ul>
+                        <li><strong>Network Rule</strong> — Allows HTTPS to Snowflake APIs</li>
+                        <li><strong>Secret</strong> — Stores the RSA private key</li>
+                        <li><strong>External Access Integration</strong> — Bridges network + secrets</li>
+                        <li><strong>ASK_PPTX_AGENT UDF</strong> — Generates JWT and calls the agent API</li>
+                        <li><strong>CALL_PPTX_AGENT_EXTERNAL</strong> — Procedure wrapper for tool binding</li>
+                    </ul>
+
+                    <div class="warning-block">
+                        <h4>Prerequisites</h4>
+                        <p><strong>1.</strong> Generate RSA key pair: <code>openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out rsa_key.p8 -nocrypt</code></p>
+                        <p><strong>2.</strong> Create service user with public key (ACCOUNTADMIN)</p>
+                        <p><strong>3.</strong> Update the SECRET in the script with your private key</p>
+                    </div>
+                </article>
+
+                <!-- ============================================================ -->
+                <!-- LAYER 5: MAIN AGENT -->
+                <!-- ============================================================ -->
+                <article class="post" id="layer5-integration">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">5</span>Integrate with Your Agent</h2>
+                            <p>Add the PPTX tool to your existing agent</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label agent">Layer 5</span>
+
+                    <p>Add two blocks to your main agent's YAML specification:</p>
+                    <ul>
+                        <li><strong>tool_spec</strong> — Declares the tool with <code>type: "generic"</code></li>
+                        <li><strong>tool_resources</strong> — Binds to <code>CALL_PPTX_AGENT_EXTERNAL</code> procedure</li>
+                    </ul>
+
+                    <div class="note-block">
+                        <strong>See README.md</strong> for the exact YAML blocks to copy.
+                    </div>
+                </article>
+
+                <!-- END-TO-END FLOW -->
+                <article class="post" id="layer5-endtoend">
+                    <header>
+                        <div class="title">
+                            <h2><span class="step-number">5</span>End-to-End Request Flow</h2>
+                            <p>Tracing a single user request through all five layers</p>
+                        </div>
+                    </header>
+
+                    <span class="layer-label agent">Layer 5 &middot; Full Flow</span>
+
+                    <p>Let's trace what happens when a user says: <em>"Create a deal review for PayPal 
+                    highlighting pipeline momentum."</em></p>
+
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+sequenceDiagram
+    actor User
+    participant SA as YOUR_MAIN_AGENT
+    participant CRM as Your Data Tools
+    participant BR as Bridge UDF
+    participant PA as PPTX_GENERATOR_AGENT
+    participant PR as CREATE_PPTX_FROM_JSON
+    participant SPCS as SPCS Container
+    participant STG as @PPTX_OUTPUT_STAGE
+
+    User->>SA: "Create a deal review for PayPal"
+    SA->>SA: Discovery (gather requirements)
+    User-->>SA: Answers (audience, tone, slides, palette...)
+    
+    SA->>CRM: Query relevant data
+    CRM-->>SA: Data results
+    
+    SA->>SA: Compile complete data package
+    SA->>BR: CALL_PPTX_AGENT_EXTERNAL(data package)
+    
+    BR->>BR: Generate JWT from RSA key
+    BR->>PA: POST /agents/PPTX_GENERATOR_AGENT:run
+    
+    PA->>PA: Design slides (HTML + charts)
+    PA->>PR: CREATE_PPTX_FROM_JSON({slides, filename})
+    PR->>SPCS: SELECT CONVERT_HTML_TO_PPTX(?)
+    SPCS->>SPCS: Playwright render + PptxGenJS build
+    SPCS-->>PR: {base64: "UEsDBBQA...", slideCount: 8}
+    PR->>STG: session.file.put(decoded .pptx)
+    PR-->>PA: {success: true, pptx_path: "@.../paypal_review.pptx"}
+    
+    PA-->>BR: SSE stream with file path + summary
+    BR-->>SA: Concatenated response text
+    SA-->>User: "Created 8-slide presentation.<br/>Download: @PPTX_OUTPUT_STAGE/paypal_review.pptx"
+                        </pre>
+                        <div class="mermaid-caption">End-to-End Sequence &mdash; All Five Layers</div>
+                    </div>
+
+                    <div class="success-block">
+                        <strong>Result:</strong> The user receives a download link to a professional, fully-editable PowerPoint 
+                        presentation with native text, shapes, charts, and tables &mdash; all generated from a single natural language request.
+                    </div>
+
+                    <h3>Summary: Custom Tool Recipe</h3>
+                    <p>To add any custom capability to a Cortex Agent, follow this reusable pattern:</p>
+
+                    <div class="mermaid-container">
+                        <pre class="mermaid">
+flowchart TD
+    A["<b>1. Build the Capability</b><br/><small>SPCS container, external API,<br/>or inline Python</small>"]
+    B["<b>2. Expose via Service Function</b><br/><small>CREATE FUNCTION ... SERVICE = ...<br/>AS '/endpoint'</small>"]
+    C["<b>3. Wrap in Stored Procedure</b><br/><small>CREATE PROCEDURE tool_name&lpar;params&rpar;<br/>LANGUAGE PYTHON</small>"]
+    D["<b>4. Declare in Agent YAML</b><br/><small>tool_spec: type generic + input_schema<br/>tool_resources: procedure identifier</small>"]
+    E["<b>5. Multi-Agent Bridge</b><br/><small>&lpar;Optional&rpar; JWT auth UDF +<br/>procedure wrapper for agent-to-agent</small>"]
+
+    A --> B --> C --> D
+    D -.->|"if needed"| E
+
+    style A fill:#11567F,color:#fff,stroke:#11567F
+    style B fill:#2EB67D,color:#fff,stroke:#2EB67D
+    style C fill:#29B5E8,color:#fff,stroke:#29B5E8
+    style D fill:#D15635,color:#fff,stroke:#D15635
+    style E fill:#8B5CF6,color:#fff,stroke:#8B5CF6
+                        </pre>
+                        <div class="mermaid-caption">Reusable Custom Tool Recipe</div>
+                    </div>
+                </article>
+
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer id="footer">
+            <div class="logo">evolv</div>
+            <p>Custom Tool Architecture Guide &mdash; PPTX Generator for Cortex Agents</p>
+            <p style="margin-top: 0.5rem; opacity: 0.7;">{{DATABASE}}.{{SCHEMA}} | Snowpark Container Services</p>
+        </                            
